@@ -10,16 +10,16 @@ fail() {
   exit 1
 }
 
-normalized=$(hosted_normalize_github_config_url 'https://github.com/Garysng/Bench.git/')
-[[ "$normalized" == 'https://github.com/garysng/bench' ]] || fail "URL normalization"
+normalized=$(hosted_normalize_github_config_url 'https://github.com/NovitaLabs/Example.git/')
+[[ "$normalized" == 'https://github.com/novitalabs/example' ]] || fail "URL normalization"
 target_a=$(hosted_target_id "$normalized")
-target_b=$(hosted_target_id 'https://github.com/garysng/bench')
+target_b=$(hosted_target_id 'https://github.com/novitalabs/example')
 [[ "$target_a" == "$target_b" ]] || fail "stable target ID"
-[[ "$target_a" == garysng-bench-* ]] || fail "readable target ID"
-if hosted_normalize_github_config_url 'https://github.com/garysng/bench?wrong=1' >/dev/null 2>&1; then
+[[ "$target_a" == novitalabs-example-* ]] || fail "readable target ID"
+if hosted_normalize_github_config_url 'https://github.com/novitalabs/example?wrong=1' >/dev/null 2>&1; then
   fail "invalid URL rejection"
 fi
-target_c=$(hosted_target_id 'https://github.com/garysng/another-repository')
+target_c=$(hosted_target_id 'https://github.com/novitalabs/another-repository')
 [[ "$target_a" != "$target_c" ]] || fail "different target IDs"
 
 test_dir=$(mktemp -d)

@@ -1,4 +1,4 @@
-module github.com/garysng/novita-actions-runner-controller
+module github.com/novitalabs/github-actions-runner-controller
 
 go 1.27.3
 

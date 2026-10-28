@@ -2,7 +2,7 @@ FROM debian:bookworm-slim
 ARG RUNNER_VERSION=2.337.0
 ARG TARGETARCH
 ARG VERSION=dev
-LABEL org.opencontainers.image.source="https://github.com/garysng/novita-actions-runner-controller" \
+LABEL org.opencontainers.image.source="https://github.com/novitalabs/github-actions-runner-controller" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.title="Novita GitHub Actions Runner" \
       io.novita.github-actions.runner-version="${RUNNER_VERSION}"

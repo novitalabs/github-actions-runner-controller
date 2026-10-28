@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/actions/scaleset"
-	"github.com/garysng/novita-actions-runner-controller/internal/provisioner"
+	"github.com/novitalabs/github-actions-runner-controller/internal/provisioner"
 	"github.com/google/uuid"
 )
 

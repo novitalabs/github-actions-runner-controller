@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/actions/scaleset"
 	"github.com/actions/scaleset/listener"
-	"github.com/garysng/novita-actions-runner-controller/internal/provisioner"
+	"github.com/novitalabs/github-actions-runner-controller/internal/provisioner"
 	"log/slog"
 	"sync"
 	"sync/atomic"

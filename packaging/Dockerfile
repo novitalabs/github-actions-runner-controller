@@ -12,7 +12,7 @@ RUN CGO_ENABLED=0 go build -trimpath \
 
 FROM python:3.12.12-slim-bookworm
 ARG VERSION=dev
-LABEL org.opencontainers.image.source="https://github.com/garysng/novita-actions-runner-controller" \
+LABEL org.opencontainers.image.source="https://github.com/novitalabs/github-actions-runner-controller" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.title="Novita GitHub Actions Controller"
 WORKDIR /app

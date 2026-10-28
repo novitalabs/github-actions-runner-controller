@@ -12,11 +12,11 @@ import (
 
 	"github.com/actions/scaleset"
 	"github.com/actions/scaleset/listener"
-	"github.com/garysng/novita-actions-runner-controller/internal/config"
-	"github.com/garysng/novita-actions-runner-controller/internal/controller"
-	githubhttp "github.com/garysng/novita-actions-runner-controller/internal/github"
-	"github.com/garysng/novita-actions-runner-controller/internal/provisioner"
-	"github.com/garysng/novita-actions-runner-controller/internal/telemetry"
+	"github.com/novitalabs/github-actions-runner-controller/internal/config"
+	"github.com/novitalabs/github-actions-runner-controller/internal/controller"
+	githubhttp "github.com/novitalabs/github-actions-runner-controller/internal/github"
+	"github.com/novitalabs/github-actions-runner-controller/internal/provisioner"
+	"github.com/novitalabs/github-actions-runner-controller/internal/telemetry"
 )
 
 var version = "dev"
