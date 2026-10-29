@@ -166,6 +166,72 @@ Local 模式直接拉取固定的
 Sandbox 文件系统原子写入，Runner 读取后立即删除；它不会进入 Sandbox
 环境变量、metadata、进程参数或 controller 日志。
 
+## 自定义 Runner Template
+
+需要预装工具时，在公共 runner 镜像之上构建自己的 Template，再让
+controller 使用它。`novita template create` 的完整说明见 Novita 文档
+[Build Template](https://docs.novita.ai/guides/sandbox-template-build-operations)。
+
+### 1. 编写 Template Dockerfile
+
+以 `templates/runner/novita.Dockerfile` 为起点。必须保留 controller 依赖的
+三个约定：`user` 用户、`/home/user/actions-runner` 目录和 `entrypoint.sh`
+启动命令。controller
+会把每个 Job 的 JIT 配置写入该目录，由入口脚本读取。
+
+```dockerfile
+# templates/runner/novita.Dockerfile
+FROM novitalabs/github-actions-runner:v0.1.1
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      build-essential pkg-config libssl-dev zstd \
+    && rm -rf /var/lib/apt/lists/*
+USER user
+CMD ["/home/user/actions-runner/entrypoint.sh"]
+```
+
+按需追加 `apt-get install` 包或下载其他工具。rustup、nvm 这类用户级工具
+请在 `USER user` 之后安装，使其落在 `/home/user` 下。
+
+### 2. 构建 Template
+
+名字不要与公共的 `github-actions-runner` 冲突。默认规格为 2 vCPU、4 GB
+内存，重编译任务建议调大：
+
+```bash
+novita template create my-gcc-runner \
+  --path templates/runner \
+  --dockerfile novita.Dockerfile \
+  --cpu-count 4 --memory-mb 8192 \
+  --cmd /home/user/actions-runner/entrypoint.sh \
+  --ready-cmd 'test -x /home/user/actions-runner/entrypoint.sh'
+```
+
+`make runner-template RUNNER_TEMPLATE=my-gcc-runner` 会以默认规格执行同一
+条命令。每次修改 Dockerfile 后用相同名字重新构建；如果平台拒绝重名，换
+一个新名字。
+
+### 3. 设置 `NOVITA_RUNNER_TEMPLATE`
+
+Hosted 模式在部署时读取 Template 名。先 kill 该目标现有的 Control
+Sandbox，再带上覆盖值重新部署：
+
+```bash
+novita sandbox kill CONTROL_SANDBOX_ID
+NOVITA_RUNNER_TEMPLATE=my-gcc-runner bash scripts/deploy-hosted.sh
+```
+
+Local Docker 模式在 `.env` 中设置：
+
+```bash
+NOVITA_RUNNER_TEMPLATE=my-gcc-runner
+```
+
+然后执行 `docker compose up -d`。工作流无需修改，重新运行失败的 Job 即可
+落到新 Template 上。一个 controller 只使用一个 runner Template；需要多套
+工具链时，为每个 Template 部署一个 controller，使用不同的 `SCALE_SET_NAME`
+并通过 `runs-on` 区分。
+
 ## License
 
 本项目使用 [MIT License](LICENSE)。

@@ -203,6 +203,74 @@ Local mode pulls the immutable
 only through `GITHUB_TOKEN` and `NOVITA_API_KEY` in `.env`. Use the same
 `runs-on: novita-scale-set` workflow configuration shown above.
 
+## Custom runner Template
+
+To preinstall tools, build your own runner Template on top of the public
+runner image and point the controller at it. See the Novita guide
+[Build Template](https://docs.novita.ai/guides/sandbox-template-build-operations)
+for the full `novita template create` reference.
+
+### 1. Write the Template Dockerfile
+
+Start from `templates/runner/novita.Dockerfile`. Keep the three conventions
+the controller relies on: the `user` account, the `/home/user/actions-runner`
+directory, and the `entrypoint.sh` start command. The controller writes each
+job's JIT configuration into that directory and the entrypoint consumes it.
+
+```dockerfile
+# templates/runner/novita.Dockerfile
+FROM novitalabs/github-actions-runner:v0.1.1
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      build-essential pkg-config libssl-dev zstd \
+    && rm -rf /var/lib/apt/lists/*
+USER user
+CMD ["/home/user/actions-runner/entrypoint.sh"]
+```
+
+Add further `apt-get install` packages or tool downloads as needed. Install
+user-level tools such as rustup or nvm while `USER user` is active so they land
+in `/home/user`.
+
+### 2. Build the Template
+
+Choose a name that does not collide with the public `github-actions-runner`
+Template. Resources default to 2 vCPU and 4 GB; raise them for heavy compiles.
+
+```bash
+novita template create my-gcc-runner \
+  --path templates/runner \
+  --dockerfile novita.Dockerfile \
+  --cpu-count 4 --memory-mb 8192 \
+  --cmd /home/user/actions-runner/entrypoint.sh \
+  --ready-cmd 'test -x /home/user/actions-runner/entrypoint.sh'
+```
+
+`make runner-template RUNNER_TEMPLATE=my-gcc-runner` runs the same command
+with the default resource size. Rebuild with the same name after each
+Dockerfile change, or use a new name if the platform rejects a duplicate.
+
+### 3. Set `NOVITA_RUNNER_TEMPLATE`
+
+Hosted mode reads the Template name at deployment time. Kill the existing
+Control Sandbox for the target, then redeploy with the override:
+
+```bash
+novita sandbox kill CONTROL_SANDBOX_ID
+NOVITA_RUNNER_TEMPLATE=my-gcc-runner bash scripts/deploy-hosted.sh
+```
+
+Local Docker mode reads it from `.env`:
+
+```bash
+NOVITA_RUNNER_TEMPLATE=my-gcc-runner
+```
+
+Then `docker compose up -d`. Workflows do not change; re-run the failed job
+and it will land on the new Template. One controller uses exactly one runner
+Template. To offer several toolchains, deploy one controller per Template with
+distinct `SCALE_SET_NAME` values and select them with `runs-on`.
+
 ## Scaling and recovery semantics
 
 - Desired runners are `min(MAX_RUNNERS, MIN_RUNNERS + TotalAssignedJobs)`.
@@ -224,7 +292,7 @@ only through `GITHUB_TOKEN` and `NOVITA_API_KEY` in `.env`. Use the same
 | `GITHUB_CONFIG_URL` | required | Repository or organization URL |
 | `GITHUB_TOKEN` | required | GitHub PAT |
 | `NOVITA_API_KEY` | required by SDK | Novita team API key |
-| `NOVITA_RUNNER_TEMPLATE` | required | Built runner template name or ID |
+| `NOVITA_RUNNER_TEMPLATE` | required | Runner Template name or ID; see [Custom runner Template](#custom-runner-template) |
 | `SCALE_SET_NAME` | `novita` | Scale Set name |
 | `RUNNER_LABELS` | Scale Set name | Comma-separated labels |
 | `RUNNER_GROUP` | `default` | GitHub runner group |
